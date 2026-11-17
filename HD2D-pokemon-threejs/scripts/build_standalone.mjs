@@ -171,7 +171,10 @@ for (let i = 0; i < assetFiles.length; i++) {
 }
 await fsp.rm(tempDir, { recursive: true, force: true }).catch(() => {});
 
-css = cssAscii(inlineCssUrls(css, assets));
+css = inlineCssUrls(css, assets);
+
+const cssBase64 = Buffer.from(css, 'utf8').toString('base64');
+const jsBase64 = Buffer.from(js, 'utf8').toString('base64');
 
 const assetJson = JSON.stringify(assets)
   .replace(/</g, '\\u003c')
@@ -269,6 +272,30 @@ const runtime = String.raw`
 })();
 `;
 
+const bootstrap = String.raw`
+(function(){
+  "use strict";
+
+  function decode(id){
+    var node=document.getElementById(id);
+    var raw=atob(node.textContent||"");
+    node.remove();
+    var bytes=new Uint8Array(raw.length);
+    for(var i=0;i<raw.length;i++) bytes[i]=raw.charCodeAt(i);
+    return new TextDecoder("utf-8").decode(bytes);
+  }
+
+  var style=document.createElement("style");
+  style.textContent=decode("__MEOWA_CSS__");
+  document.head.appendChild(style);
+
+  var module=document.createElement("script");
+  module.type="module";
+  module.textContent=decode("__MEOWA_JS__");
+  document.body.appendChild(module);
+})();
+`;
+
 const output =
   '<!doctype html>\n' +
   '<html lang="en">\n<head>\n' +
@@ -277,11 +304,13 @@ const output =
   '<meta name="theme-color" content="#000000">\n' +
   '<title>HD2D Pokemon World</title>\n' +
   '<style>html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#000;overscroll-behavior:none;touch-action:none}' +
-  'body{min-height:100dvh}canvas{display:block}' + css + '</style>\n' +
+  'body{min-height:100dvh}canvas{display:block}</style>\n' +
   '</head>\n<body>\n' +
   '<script id="__MEOWA_ASSETS__" type="application/json">' + assetJson + '</script>\n' +
+  '<script id="__MEOWA_CSS__" type="application/octet-stream">' + cssBase64 + '</script>\n' +
+  '<script id="__MEOWA_JS__" type="application/octet-stream">' + jsBase64 + '</script>\n' +
   '<script>' + runtime + '</script>\n' +
-  '<script type="module">' + js + '</script>\n' +
+  '<script>' + bootstrap + '</script>\n' +
   '</body>\n</html>\n';
 
 const invalid = [...output].filter((ch) => ch.codePointAt(0) > 127);
