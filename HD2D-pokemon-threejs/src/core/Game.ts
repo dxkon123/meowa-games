@@ -24,6 +24,7 @@ import { GameSession, type SpeciesId, type StoryPhase } from '../story/GameSessi
 import { ObjectiveHud } from '../story/ObjectiveHud';
 import { ChoiceMenu } from '../ui/ChoiceMenu';
 import { TextEntry } from '../ui/TextEntry';
+import { ProgressHud } from '../ui/ProgressHud';
 import {
   BattleScreen, type BattleOptions, type BattleResult,
 } from '../battle/BattleScreen';
@@ -84,6 +85,7 @@ export class Game {
   private readonly dialogue = new DialogueBox();
   private readonly session = GameSession.load();
   private readonly objective = new ObjectiveHud();
+  private readonly progress = new ProgressHud();
   private rig!: CameraRig;
   private player!: Player;
   private postfx!: PostFX;
@@ -126,6 +128,7 @@ export class Game {
     this.lastTileX = this.player.movement.tileX;
     this.lastTileY = this.player.movement.tileY;
     this.objective.set(this.session.phase);
+    this.progress.set(this.session.stats, this.session.inventory);
 
     this.rig = new CameraRig(world.map);
     this.rig.snapTo(this.player.mesh.position.x, this.player.mesh.position.z);
@@ -302,6 +305,7 @@ export class Game {
         inventory: this.session.inventory,
       });
       this.session.recordBattle(result);
+      this.progress.set(this.session.stats, this.session.inventory);
       if (result === 'defeat') {
         this.session.party.forEach((pokemon) => { pokemon.hp = pokemon.maxHp; });
         await this.dialogue.showAsync('提示', [
