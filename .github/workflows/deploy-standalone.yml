@@ -32,11 +32,6 @@ jobs:
           cache: npm
           cache-dependency-path: HD2D-pokemon-threejs/package-lock.json
 
-      - name: Install ffmpeg
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y ffmpeg
-
       - name: Install dependencies
         run: npm ci
 
