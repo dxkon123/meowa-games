@@ -301,6 +301,7 @@ export class Game {
         storage: this.session.storage,
         inventory: this.session.inventory,
       });
+      this.session.recordBattle(result);
       if (result === 'defeat') {
         this.session.party.forEach((pokemon) => { pokemon.hp = pokemon.maxHp; });
         await this.dialogue.showAsync('提示', [
